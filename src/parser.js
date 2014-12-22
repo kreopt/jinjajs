@@ -81,10 +81,16 @@ Parser.prototype.tokenize = function (src) {
             if (inner.charAt(0) == '-') var wsCollapseLeft = true;
             if (inner.slice(-1) == '-') var wsCollapseRight = true;
             inner = inner.replace(/^-|-$/g, '').trim();
-            //if we're in raw mode and we are not looking at an "endraw" tag, move along
-            if (parser.rawMode && (open + inner) != '{%endraw') {
+            
+			//if we're in raw mode and we are not looking at an "endraw" tag, move along
+            if (parser.rawMode && (open + inner) != '{%endraw') { // TODO: remove hardcoded tag
                 return Promise.resolve(index + 1);
             }
+			
+            if (parser.commentMode) {
+            	// TODO: skip until parser.commentMode==false
+            }
+
             var text = src.slice(lastEnd, index);
             lastEnd = index + open.length + match.length;
             if (trimLeading) text = trimLeft(text);
@@ -93,7 +99,7 @@ Parser.prototype.tokenize = function (src) {
             if (open == '{{{') {
                 //liquid-style: make {{{x}}} => {{x|safe}}
                 open = '{{';
-                inner += '|safe';
+                inner += '|safe';		// TODO: remove hardcoded filter
             } else if (open == '{#') {
                 return Promise.resolve(lastEnd)
             }
