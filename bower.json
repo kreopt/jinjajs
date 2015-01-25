@@ -8,7 +8,7 @@
     "globals"
   ],
   "license": "MIT",
-  "private": true,
+  "private": false,
   "ignore": [
     "**/.*",
     "gulpfile.js",
