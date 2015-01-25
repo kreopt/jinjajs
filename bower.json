@@ -1,0 +1,23 @@
+{
+  "name": "jinjajs",
+  "version": "1.0.0",
+  "authors": [
+    "dagroup <it@dagroup.pro>"
+  ],
+  "moduleType": [
+    "globals"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "gulpfile.js",
+    "bower_components",
+    "test",
+    "src"
+  ],
+  "repository": {
+      "type": "git",
+      "url": "git://github.com/kreopt/jinjajs.git"
+    }
+}
