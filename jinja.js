@@ -81,10 +81,16 @@ Parser.prototype.tokenize = function (src) {
             if (inner.charAt(0) == '-') var wsCollapseLeft = true;
             if (inner.slice(-1) == '-') var wsCollapseRight = true;
             inner = inner.replace(/^-|-$/g, '').trim();
-            //if we're in raw mode and we are not looking at an "endraw" tag, move along
-            if (parser.rawMode && (open + inner) != '{%endraw') {
+            
+			//if we're in raw mode and we are not looking at an "endraw" tag, move along
+            if (parser.rawMode && (open + inner) != '{%endraw') { // TODO: remove hardcoded tag
                 return Promise.resolve(index + 1);
             }
+			
+            if (parser.commentMode) {
+            	// TODO: skip until parser.commentMode==false
+            }
+
             var text = src.slice(lastEnd, index);
             lastEnd = index + open.length + match.length;
             if (trimLeading) text = trimLeft(text);
@@ -93,7 +99,7 @@ Parser.prototype.tokenize = function (src) {
             if (open == '{{{') {
                 //liquid-style: make {{{x}}} => {{x|safe}}
                 open = '{{';
-                inner += '|safe';
+                inner += '|safe';		// TODO: remove hardcoded filter
             } else if (open == '{#') {
                 return Promise.resolve(lastEnd)
             }
@@ -325,6 +331,7 @@ function matchAll(str, reg, fn) {
         recurse_match();
     });
 }
+
 /*!
  * Jinja Templating for JavaScript with asyncronous template file loader v0.1.8
  * https://github.com/kreopt/jinjajs
@@ -487,23 +494,42 @@ jinja.render = function (markup, data, opts) {
 
 jinja.templateFiles = {};
 jinja.template_url = '/templates/';
-
 jinja.readTemplateFile = function (name) {
+    if (!jinja.loader){
+        throw new Error("template loader is not set!");
+    }
     return new Promise(function (resolve, reject) {
         var templateFiles = jinja.templateFiles || {};
         var templateFile = templateFiles[name];
         if (templateFile == null) {
-            $.get(jinja.template_url + name, function (html) {
-                jinja.templateFiles[name] = html;
-                resolve(html);
-            }).fail(function () {
-                reject('Template file not found: ' + name);
-            });
+            return jinja.loader(jinja.template_url + name).then(function(data){
+                resolve(data);
+            }).catch(function (reason) {
+                reject('Template file "'+name+'" not found: ' + reason);
+            });            
         } else {
             resolve(templateFile);
         }
     });
 };
+
+jinja.loader = function(path){
+    return fetch(path).then(function(response){
+        // status "0" to handle local files fetching (e.g. Cordova/Phonegap etc.)
+        if (response.status === 200 || response.status === 0) {
+            return response.text().then(function(data){
+                console.log(data);
+                jinja.templateFiles[name] = data;
+                return jinja.templateFiles[name];
+            }).catch(function(r){
+                "use strict";
+                console.log(":(")
+            });
+        } else {
+            return Promise.reject(new Error(response.statusText))
+        }
+    })
+}
 
 jinja.make_filter('html', function (val) {
     return toString(val)
@@ -515,6 +541,13 @@ jinja.make_filter('html', function (val) {
 
 jinja.make_filter('safe', function (val) {
     return val;
+});
+
+jinja.make_tag('comment', function () {
+    this.commentMode = true;
+});
+jinja.make_tag('endcomment', function () {
+    this.commentMode = false;
 });
 
 jinja.make_tag('block', function (name) {
@@ -608,6 +641,8 @@ jinja.make_tag('include', function (name) {
     });
 });
 
+jinja.make_tag('load', function (name) {});
+
 jinja.make_tag('raw', function () {
     this.rawMode = true;
 });
@@ -626,6 +661,27 @@ jinja.make_tag('assign', 'set');
 jinja.make_tag('static',function(stmt){
     stmt = stmt.trim();
     this.push("write(\""+Fat.config.static_url + stmt.substr(1,stmt.length-2)+"\")");
+});
+
+jinja.make_tag('static',function(stmt){
+    stmt = stmt.trim();
+	var parts = stmt.split(/\s/);
+	if (parts.length < 1){
+		console.warn("url tag should contain 1 or more parameters. ignoring. ");
+		return;
+	}
+	// TODO: check quotes
+	var name = parts[0].substr(1,parts[0].length-2);
+	var args={positional:[], keyword:{}};
+	for (var i=1; i<parts.length; i++){	
+		if (parts[i].indexOd('=')!=-1){
+			var kw=parts[i].split('=');
+			args.keyword[kw[0].trim()]=kw[1].trim();
+		} else {
+			args.positional.push(parts[i].trim());
+		}
+	}
+    this.push("write(\""+Fat.resolve_url(name, args)+"\")");
 });
 }());
 //# sourceMappingURL=jinja.js.map

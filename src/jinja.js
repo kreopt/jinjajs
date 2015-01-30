@@ -160,18 +160,19 @@ jinja.render = function (markup, data, opts) {
 
 jinja.templateFiles = {};
 jinja.template_url = '/templates/';
-
 jinja.readTemplateFile = function (name) {
+    if (!jinja.loader){
+        throw new Error("template loader is not set!");
+    }
     return new Promise(function (resolve, reject) {
         var templateFiles = jinja.templateFiles || {};
         var templateFile = templateFiles[name];
         if (templateFile == null) {
-            $.get(jinja.template_url + name, function (html) {
-                jinja.templateFiles[name] = html;
-                resolve(html);
-            }).fail(function () {
-                reject('Template file not found: ' + name);
-            });
+            return jinja.loader(jinja.template_url + name).then(function(data){
+                resolve(data);
+            }).catch(function (reason) {
+                reject('Template file "'+name+'" not found: ' + reason);
+            });            
         } else {
             resolve(templateFile);
         }

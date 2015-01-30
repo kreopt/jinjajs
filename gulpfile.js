@@ -12,6 +12,7 @@ var source_dir = './src/';
 var build_modules = [
     'parser.js',
     'jinja.js',
+    'loaders/ajax.js',
     'filters/*.js',
     'tags/*.js'];
 

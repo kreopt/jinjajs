@@ -19,5 +19,9 @@
   "repository": {
       "type": "git",
       "url": "git://github.com/kreopt/jinjajs.git"
-    }
+  },
+  "dependencies":{
+    "fetch":"*"
+  }
+  
 }
