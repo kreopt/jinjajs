@@ -446,7 +446,7 @@ jinja.compile = function (markup, opts) {
     return new Promise(function (resolve, reject) {
         opts = opts || {};
         var parser = new Parser();
-        parser.readTemplateFile = _this.readTemplateFile;
+        parser.read_template_file = _this.read_template_file;
         var code = [];
         code.push('function render($) {');
         code.push('var get = $.get, set = $.set, push = $.push, pop = $.pop, write = $.write, filter = $.filter, each = $.each, block = $.block;');
@@ -492,14 +492,14 @@ jinja.render = function (markup, data, opts) {
     })
 };
 
-jinja.templateFiles = {};
+jinja.template_files = {};
 jinja.template_url = '/templates/';
-jinja.readTemplateFile = function (name) {
+jinja.read_template_file = function (name) {
     if (!jinja.loader){
         throw new Error("template loader is not set!");
     }
     return new Promise(function (resolve, reject) {
-        var templateFiles = jinja.templateFiles || {};
+        var templateFiles = jinja.template_files || {};
         var templateFile = templateFiles[name];
         if (templateFile == null) {
             return jinja.loader(jinja.template_url + name).then(function(data){
@@ -519,8 +519,8 @@ jinja.loader = function(path){
         if (response.status === 200 || response.status === 0) {
             return response.text().then(function(data){
                 console.log(data);
-                jinja.templateFiles[name] = data;
-                return jinja.templateFiles[name];
+                jinja.template_files[name] = data;
+                return jinja.template_files[name];
             }).catch(function(r){
                 "use strict";
                 console.log(":(")
@@ -579,7 +579,7 @@ jinja.make_tag('extends', function (name) {
         name = this.parseQuoted(name);
     }
     var _this = this;
-    return this.readTemplateFile(name).then(function (parentSrc) {
+    return this.read_template_file(name).then(function (parentSrc) {
         _this.isParent = true;
         return _this.tokenize(parentSrc).then(function(){
             _this.isParent = false;
@@ -631,7 +631,7 @@ jinja.make_tag('include', function (name) {
         name = this.parseQuoted(name);
     }
     var _this = this;
-    return this.readTemplateFile(name).then(function (incSrc) {
+    return this.read_template_file(name).then(function (incSrc) {
         _this.isInclude = true;
         return _this.tokenize(incSrc).then(function(){
             _this.isInclude = false;

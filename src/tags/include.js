@@ -3,7 +3,7 @@ jinja.make_tag('include', function (name) {
         name = this.parseQuoted(name);
     }
     var _this = this;
-    return this.readTemplateFile(name).then(function (incSrc) {
+    return this.read_template_file(name).then(function (incSrc) {
         _this.isInclude = true;
         return _this.tokenize(incSrc).then(function(){
             _this.isInclude = false;

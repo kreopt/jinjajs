@@ -3,11 +3,17 @@
  * https://github.com/kreopt/jinjajs
  * Forked from https://github.com/sstur/jinja-js
  */
-window.jinja = {};
+self.jinja = {};
 
 //the context 'this' inside tag_handlers is the parser instance
-jinja.tag_handlers = {};
-jinja.filter_handlers = {};
+Object.defineProperties(jinja,{
+    tag_handlers:{value:{}, writable:false},
+    filter_handlers:{value:{}, writable:false},
+    template_files:{value:{}, writable:false},
+    loaders:{value:{}, writable:false},
+    template_url: {value:'/templates/',writable:true},
+    loader:{value:'ajax',writable:true}
+});
 
 var _toString = Object.prototype.toString;
 var _hasOwnProperty = Object.prototype.hasOwnProperty;
@@ -95,24 +101,12 @@ var getRuntime = function runtime(data, opts) {
 
 var runtime;
 
-jinja.make_tag = function(name, handler){
-    if (typeof handler == typeof ''){
-        jinja.tag_handlers[name] = jinja.tag_handlers[handler];
-    } else {
-        jinja.tag_handlers[name] = handler;
-    }
-};
-jinja.make_filter = function(name, filter){
-    if (jinja.filter_handlers.name) {console.warn('Filter '+name+' already exists. Overriding.');}
-    jinja.filter_handlers[name] = filter;
-};
-
 jinja.compile = function (markup, opts) {
     var _this = this;
     return new Promise(function (resolve, reject) {
         opts = opts || {};
         var parser = new Parser();
-        parser.readTemplateFile = _this.readTemplateFile;
+        parser.read_template_file = _this.read_template_file;
         var code = [];
         code.push('function render($) {');
         code.push('var get = $.get, set = $.set, push = $.push, pop = $.pop, write = $.write, filter = $.filter, each = $.each, block = $.block;');
@@ -158,17 +152,18 @@ jinja.render = function (markup, data, opts) {
     })
 };
 
-jinja.templateFiles = {};
-jinja.template_url = '/templates/';
-jinja.readTemplateFile = function (name) {
-    if (!jinja.loader){
-        throw new Error("template loader is not set!");
+jinja.read_template_file = function (name) {
+    var _this = this;
+    if (!_this.loader){
+        if (!_this.loaders[_this.loader]) {
+            throw new Error("template loader is not set!");
+        }
     }
     return new Promise(function (resolve, reject) {
-        var templateFiles = jinja.templateFiles || {};
+        var templateFiles = _this.template_files || {};
         var templateFile = templateFiles[name];
         if (templateFile == null) {
-            return jinja.loader(jinja.template_url + name).then(function(data){
+            return _this.loaders[_this.loader](jinja.template_url + name).then(function(data){
                 resolve(data);
             }).catch(function (reason) {
                 reject('Template file "'+name+'" not found: ' + reason);
@@ -177,4 +172,20 @@ jinja.readTemplateFile = function (name) {
             resolve(templateFile);
         }
     });
+};
+
+// Extenders
+jinja.make_tag = function(name, handler){
+    if (typeof handler == typeof ''){
+        jinja.tag_handlers[name] = jinja.tag_handlers[handler];
+    } else {
+        jinja.tag_handlers[name] = handler;
+    }
+};
+jinja.make_filter = function(name, filter){
+    if (jinja.filter_handlers.name) {console.warn('Filter '+name+' already exists. Overriding.');}
+    jinja.filter_handlers[name] = filter;
+};
+jinja.register_loader = function(name, loader){
+    jinja.loaders[name] = loader;
 };

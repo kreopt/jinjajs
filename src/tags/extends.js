@@ -27,7 +27,7 @@ jinja.make_tag('extends', function (name) {
         name = this.parseQuoted(name);
     }
     var _this = this;
-    return this.readTemplateFile(name).then(function (parentSrc) {
+    return this.read_template_file(name).then(function (parentSrc) {
         _this.isParent = true;
         return _this.tokenize(parentSrc).then(function(){
             _this.isParent = false;
